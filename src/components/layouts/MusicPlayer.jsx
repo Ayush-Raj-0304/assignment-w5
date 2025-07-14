@@ -1,58 +1,41 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import {
-  togglePlay,
-  setVolume,
-  toggleRepeat,
-  toggleShuffle,
-  setCurrentTime,
-  setDuration,
-  playNext,
-  playPrevious,
-} from '../../redux/features/playerSlice';
-import {
-  BsFillPlayFill,
-  BsPauseFill,
-  BsShuffle,
-  BsRepeat,
-  BsRepeat1,
-  BsFillVolumeUpFill,
-  BsFillVolumeDownFill,
-  BsFillVolumeMuteFill,
-} from 'react-icons/bs';
+import { BsFillPlayFill, BsPauseFill, BsShuffle, BsRepeat, BsRepeat1 } from 'react-icons/bs';
 import { BiSkipNext, BiSkipPrevious } from 'react-icons/bi';
-import { FaRegHeart } from 'react-icons/fa';
-import { TbMicrophone2, TbPlaylist } from 'react-icons/tb';
+import { FaRegHeart, FaHeart } from 'react-icons/fa';
 import { HiQueueList } from 'react-icons/hi2';
-import NowPlayingView from './NowPlayingView';
+import { togglePlay, toggleRepeat, toggleShuffle, playNext, playPrevious, setCurrentTime, setDuration } from '../../redux/features/playerSlice';
+import { toggleLikeSong } from '../../redux/features/likedSongsSlice';
+import { handleImageError } from '../../utils/imageUtils';
+import FeatureModal from '../modals/FeatureModal';
 
 const MusicPlayer = () => {
   const dispatch = useDispatch();
+  const { currentSong, isPlaying, repeat, shuffle } = useSelector((state) => state.player);
+  const { likedSongs } = useSelector((state) => state.likedSongs);
+  const [showFeatureModal, setShowFeatureModal] = useState(false);
+  const [featureMessage, setFeatureMessage] = useState('');
   const audioRef = useRef(null);
-  const [showNowPlaying, setShowNowPlaying] = useState(false);
-  const {
-    currentSong,
-    isPlaying,
-    volume,
-    repeat,
-    shuffle,
-    currentTime,
-    queue,
-  } = useSelector((state) => state.player);
+
+  const isCurrentSongLiked = currentSong && likedSongs.some(song => song.id === currentSong.id);
+
+  const showComingSoon = (feature) => {
+    setFeatureMessage(`${feature} feature is coming soon!`);
+    setShowFeatureModal(true);
+  };
 
   useEffect(() => {
     if (currentSong?.url) {
       if (isPlaying) {
-        audioRef.current.play();
+        audioRef.current.play().catch(() => {
+          // Handle autoplay restrictions
+          dispatch(togglePlay());
+        });
       } else {
         audioRef.current.pause();
       }
     }
-  }, [isPlaying, currentSong]);
-
-  useEffect(() => {
-    audioRef.current.volume = volume;
-  }, [volume]);
+  }, [isPlaying, currentSong, dispatch]);
 
   const handleTimeUpdate = () => {
     dispatch(setCurrentTime(audioRef.current.currentTime));
@@ -71,41 +54,30 @@ const MusicPlayer = () => {
     }
   };
 
-  const formatTime = (time) => {
-    if (time && !isNaN(time)) {
-      const minutes = Math.floor(time / 60);
-      const seconds = Math.floor(time % 60);
-      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-    }
-    return '0:00';
-  };
-
-  const handleSeek = (e) => {
-    const seekTime = (e.target.value / 100) * audioRef.current.duration;
-    audioRef.current.currentTime = seekTime;
-    dispatch(setCurrentTime(seekTime));
-  };
-
-  const handlePlayerClick = () => {
+  const handleLikeClick = () => {
     if (currentSong) {
-      setShowNowPlaying(true);
+      dispatch(toggleLikeSong(currentSong));
     }
   };
+
+  if (!currentSong) return null;
 
   return (
     <>
-      <div
-        className="fixed bottom-0 left-0 right-0 bg-[#181818] border-t border-[#282828] px-4 py-2 cursor-pointer"
-        onClick={handlePlayerClick}
-      >
-        <audio
-          ref={audioRef}
-          src={currentSong?.url}
-          onTimeUpdate={handleTimeUpdate}
-          onLoadedMetadata={handleLoadedMetadata}
-          onEnded={handleEnded}
+      {showFeatureModal && (
+        <FeatureModal
+          message={featureMessage}
+          onClose={() => setShowFeatureModal(false)}
         />
-        
+      )}
+      <audio
+        ref={audioRef}
+        src={currentSong.url}
+        onTimeUpdate={handleTimeUpdate}
+        onLoadedMetadata={handleLoadedMetadata}
+        onEnded={handleEnded}
+      />
+      <div className="fixed bottom-0 left-0 right-0 bg-[#181818] border-t border-[#282828] px-4 py-3 z-[10]">
         <div className="flex items-center justify-between max-w-screen-xl mx-auto">
           {/* Current Song Info */}
           <div className="flex items-center w-[30%]">
@@ -115,6 +87,7 @@ const MusicPlayer = () => {
                   src={currentSong.albumArt}
                   alt={currentSong.title}
                   className="h-14 w-14 rounded"
+                  onError={handleImageError}
                 />
                 <div className="ml-3">
                   <div className="text-white text-sm font-semibold hover:underline cursor-pointer">
@@ -125,42 +98,33 @@ const MusicPlayer = () => {
                   </div>
                 </div>
                 <button
-                  className="ml-4 text-gray-400 hover:text-white"
-                  onClick={(e) => e.stopPropagation()}
+                  className={`ml-4 transition-colors ${isCurrentSongLiked ? 'text-[#1ed760]' : 'text-gray-400 hover:text-white'}`}
+                  onClick={handleLikeClick}
                 >
-                  <FaRegHeart size={16} />
+                  {isCurrentSongLiked ? <FaHeart size={16} /> : <FaRegHeart size={16} />}
                 </button>
               </>
             )}
           </div>
 
-          {/* Player Controls */}
-          <div className="flex flex-col items-center w-[40%]">
-            <div className="flex items-center gap-4 mb-1">
+          {/* Playback Controls */}
+          <div className="flex flex-col items-center max-w-[45%] w-full">
+            <div className="flex items-center gap-4 mb-2">
               <button
-                className={`text-gray-400 hover:text-white ${shuffle ? 'text-[#1ed760]' : ''}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  dispatch(toggleShuffle());
-                }}
+                className={`text-gray-400 hover:text-white transition-colors ${shuffle ? 'text-[#1ed760]' : ''}`}
+                onClick={() => showComingSoon('Shuffle')}
               >
                 <BsShuffle size={20} />
               </button>
               <button
-                className="text-gray-400 hover:text-white"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  dispatch(playPrevious());
-                }}
+                className="text-white"
+                onClick={() => dispatch(playPrevious())}
               >
-                <BiSkipPrevious size={30} />
+                <BiSkipPrevious size={32} />
               </button>
               <button
-                className="bg-white rounded-full p-2 hover:scale-105"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  dispatch(togglePlay());
-                }}
+                className="w-8 h-8 bg-white rounded-full flex items-center justify-center hover:scale-105 transition-transform"
+                onClick={() => dispatch(togglePlay())}
               >
                 {isPlaying ? (
                   <BsPauseFill size={24} className="text-black" />
@@ -169,86 +133,86 @@ const MusicPlayer = () => {
                 )}
               </button>
               <button
-                className="text-gray-400 hover:text-white"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  dispatch(playNext());
-                }}
+                className="text-white"
+                onClick={() => dispatch(playNext())}
               >
-                <BiSkipNext size={30} />
+                <BiSkipNext size={32} />
               </button>
               <button
-                className={`text-gray-400 hover:text-white ${repeat !== 'off' ? 'text-[#1ed760]' : ''}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  dispatch(toggleRepeat());
-                }}
+                className={`text-gray-400 hover:text-white transition-colors ${repeat !== 'off' ? 'text-[#1ed760]' : ''}`}
+                onClick={() => showComingSoon('Repeat')}
               >
-                {repeat === 'track' ? (
-                  <BsRepeat1 size={20} />
-                ) : (
-                  <BsRepeat size={20} />
-                )}
+                <BsRepeat size={20} />
               </button>
             </div>
-
             {/* Progress Bar */}
-            <div className="flex items-center gap-2 w-full" onClick={(e) => e.stopPropagation()}>
+            <div className="w-full flex items-center gap-2">
               <span className="text-xs text-gray-400 w-10 text-right">
-                {formatTime(currentTime)}
+                {formatTime(audioRef.current?.currentTime)}
               </span>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={(currentTime / (audioRef.current?.duration || 1)) * 100}
-                onChange={handleSeek}
-                className="w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white hover:[&::-webkit-slider-thumb]:bg-[#1ed760]"
-              />
+              <div className="flex-1 bg-[#4d4d4d] rounded-full h-1 cursor-pointer relative group"
+                   onClick={(e) => {
+                     const rect = e.currentTarget.getBoundingClientRect();
+                     const percent = (e.clientX - rect.left) / rect.width;
+                     audioRef.current.currentTime = percent * audioRef.current.duration;
+                   }}>
+                <div
+                  className="bg-white h-1 rounded-full absolute left-0 top-0"
+                  style={{
+                    width: `${(audioRef.current?.currentTime / audioRef.current?.duration) * 100 || 0}%`
+                  }}
+                />
+                <div className="h-3 w-3 bg-white rounded-full absolute top-1/2 -mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                     style={{
+                       left: `${(audioRef.current?.currentTime / audioRef.current?.duration) * 100 || 0}%`,
+                       transform: 'translateX(-50%)'
+                     }} />
+              </div>
               <span className="text-xs text-gray-400 w-10">
                 {formatTime(audioRef.current?.duration)}
               </span>
             </div>
           </div>
 
-          {/* Additional Controls */}
-          <div className="flex items-center justify-end gap-3 w-[30%]" onClick={(e) => e.stopPropagation()}>
-            <button className="text-gray-400 hover:text-white">
-              <TbMicrophone2 size={20} />
-            </button>
-            <button className="text-gray-400 hover:text-white">
+          {/* Volume Controls */}
+          <div className="flex items-center justify-end w-[30%]">
+            <button
+              className="text-gray-400 hover:text-white transition-colors mr-4"
+              onClick={() => showComingSoon('Queue')}
+            >
               <HiQueueList size={20} />
             </button>
-            <button className="text-gray-400 hover:text-white">
-              <TbPlaylist size={20} />
-            </button>
-            <div className="flex items-center gap-2">
-              <button className="text-gray-400 hover:text-white">
-                {volume === 0 ? (
-                  <BsFillVolumeMuteFill size={20} />
-                ) : volume < 0.5 ? (
-                  <BsFillVolumeDownFill size={20} />
-                ) : (
-                  <BsFillVolumeUpFill size={20} />
-                )}
-              </button>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={volume}
-                onChange={(e) => dispatch(setVolume(parseFloat(e.target.value)))}
-                className="w-24 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white hover:[&::-webkit-slider-thumb]:bg-[#1ed760]"
+            {/* Volume Slider */}
+            <div className="w-24 bg-[#4d4d4d] rounded-full h-1 cursor-pointer relative group"
+                 onClick={(e) => {
+                   const rect = e.currentTarget.getBoundingClientRect();
+                   const percent = (e.clientX - rect.left) / rect.width;
+                   audioRef.current.volume = Math.max(0, Math.min(1, percent));
+                 }}>
+              <div
+                className="bg-white h-1 rounded-full absolute left-0 top-0"
+                style={{ width: `${(audioRef.current?.volume || 1) * 100}%` }}
               />
+              <div className="h-3 w-3 bg-white rounded-full absolute top-1/2 -mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                   style={{
+                     left: `${(audioRef.current?.volume || 1) * 100}%`,
+                     transform: 'translateX(-50%)'
+                   }} />
             </div>
           </div>
         </div>
       </div>
-
-      {showNowPlaying && <NowPlayingView onClose={() => setShowNowPlaying(false)} />}
     </>
   );
+};
+
+const formatTime = (time) => {
+  if (time && !isNaN(time)) {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  }
+  return '0:00';
 };
 
 export default MusicPlayer; 

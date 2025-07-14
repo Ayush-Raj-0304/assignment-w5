@@ -4,14 +4,17 @@ import { useDispatch, useSelector } from 'react-redux';
 import { BiLibrary } from 'react-icons/bi';
 import { AiFillHome } from 'react-icons/ai';
 import { BsSearch, BsPlusSquareFill, BsFillPlayCircleFill } from 'react-icons/bs';
+import { FaHeart } from 'react-icons/fa';
 import { playlists } from '../../data/mockData';
 import { setCurrentSong, setQueue } from '../../redux/features/playerSlice';
 import { fetchUserPlaylists, addUserPlaylist } from '../../redux/features/playlistSlice';
+import { handleImageError } from '../../utils/imageUtils';
 
 const Sidebar = () => {
   const location = useLocation();
   const dispatch = useDispatch();
   const { userPlaylists } = useSelector((state) => state.playlist);
+  const { likedSongsPlaylist } = useSelector((state) => state.likedSongs);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState('');
 
@@ -70,6 +73,16 @@ const Sidebar = () => {
           <BsPlusSquareFill className="w-6 h-6 mr-4" />
           <span className="font-semibold">Create Playlist</span>
         </button>
+
+        <Link
+          to={`/playlist/${likedSongsPlaylist.id}`}
+          className={`flex items-center mb-6 text-gray-400 hover:text-white transition-colors ${location.pathname === `/playlist/${likedSongsPlaylist.id}` ? 'text-white' : ''}`}
+        >
+          <div className="w-6 h-6 mr-4 flex items-center justify-center bg-gradient-to-br from-[#450af5] to-[#c4efd9] rounded-sm">
+            <FaHeart className="w-3 h-3 text-white" />
+          </div>
+          <span className="font-semibold">Liked Songs</span>
+        </Link>
       </div>
 
       {/* Create Playlist Modal */}
@@ -117,6 +130,7 @@ const Sidebar = () => {
                 src={playlist.coverArt}
                 alt={playlist.name}
                 className="w-12 h-12 mr-4"
+                onError={handleImageError}
               />
               <div className="flex-1">
                 <h3 className="font-semibold text-white truncate">{playlist.name}</h3>
@@ -142,6 +156,7 @@ const Sidebar = () => {
                 src={playlist.coverArt}
                 alt={playlist.name}
                 className="w-12 h-12 mr-4"
+                onError={handleImageError}
               />
               <div className="flex-1">
                 <h3 className="font-semibold text-white truncate">{playlist.name}</h3>

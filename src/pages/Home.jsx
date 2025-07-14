@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { setCurrentSong, setQueue } from '../redux/features/playerSlice';
 import { playlists, albums, artists, categories } from '../data/mockData';
 import { BsFillPlayCircleFill } from 'react-icons/bs';
+import { handleImageError } from '../utils/imageUtils';
 
 const Home = () => {
   const dispatch = useDispatch();
@@ -45,6 +46,7 @@ const Home = () => {
                 src={playlist.coverArt}
                 alt={playlist.name}
                 className="h-20 w-20"
+                onError={handleImageError}
               />
               <span className="font-semibold px-4 flex-1">{playlist.name}</span>
               <button className="w-12 h-12 bg-[#1ed760] rounded-full items-center justify-center mr-4 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity flex hover:scale-105">
@@ -101,6 +103,7 @@ const Home = () => {
                   src={playlist.coverArt}
                   alt={playlist.name}
                   className="w-full aspect-square object-cover rounded-md shadow-lg mb-4"
+                  onError={handleImageError}
                 />
                 <h3 className="font-semibold truncate">{playlist.name}</h3>
                 <p className="text-sm text-gray-400 mt-1 line-clamp-2">
@@ -164,6 +167,7 @@ const Home = () => {
                   src={album.coverArt}
                   alt={album.title}
                   className="w-full aspect-square object-cover rounded-md shadow-lg mb-4"
+                  onError={handleImageError}
                 />
                 <h3 className="font-semibold truncate">{album.title}</h3>
                 <p className="text-sm text-gray-400 mt-1 truncate">

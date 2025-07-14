@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { setCurrentSong, setQueue } from '../redux/features/playerSlice';
 import { categories, playlists, songs } from '../data/mockData';
 import { BsFillPlayCircleFill } from 'react-icons/bs';
+import { handleImageError } from '../utils/imageUtils';
 
 const Category = () => {
   const { id } = useParams();
@@ -63,6 +64,7 @@ const Category = () => {
                   src={playlist.coverArt}
                   alt={playlist.name}
                   className="w-full aspect-square object-cover rounded-md shadow-lg mb-4"
+                  onError={handleImageError}
                 />
                 <h3 className="font-semibold truncate">{playlist.name}</h3>
                 <p className="text-sm text-gray-400 mt-1 line-clamp-2">
@@ -94,6 +96,7 @@ const Category = () => {
                 src={song.albumArt}
                 alt={song.title}
                 className="w-12 h-12 mr-4"
+                onError={handleImageError}
               />
               <div className="flex-1">
                 <h3 className="font-semibold">{song.title}</h3>

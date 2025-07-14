@@ -4,6 +4,7 @@ import { setCurrentSong, setQueue } from '../redux/features/playerSlice';
 import { setShowAddToPlaylistModal, setSelectedSong } from '../redux/features/playlistSlice';
 import { artists, albums, songs } from '../data/mockData';
 import { BsFillPlayCircleFill, BsThreeDots } from 'react-icons/bs';
+import { handleArtistImageError, handleAlbumImageError } from '../utils/imageUtils';
 
 const Artist = () => {
   const { id } = useParams();
@@ -47,26 +48,25 @@ const Artist = () => {
           src={artist.image}
           alt={artist.name}
           className="w-60 h-60 rounded-full shadow-2xl mb-6"
+          onError={handleArtistImageError}
         />
         <h1 className="text-7xl font-bold mb-4">{artist.name}</h1>
         <p className="text-gray-400">{artist.monthlyListeners} monthly listeners</p>
       </div>
 
-      {/* Actions */}
-      <div className="px-8 py-4 flex items-center gap-8">
+      {/* Play Button Section */}
+      <div className="px-8 py-4">
         <button
           onClick={playAllSongs}
-          className="w-14 h-14 bg-[#1ed760] rounded-full flex items-center justify-center hover:scale-105 transition-transform"
+          className="w-14 h-14 flex items-center justify-center bg-[#1ed760] rounded-full hover:bg-[#1fdf64] hover:scale-105 transition-all"
+          disabled={!artistSongs.length}
         >
-          <BsFillPlayCircleFill className="w-10 h-10 text-black" />
-        </button>
-        <button className="text-3xl text-gray-400 hover:text-white transition-colors">
-          <BsThreeDots />
+          <BsFillPlayCircleFill className="w-8 h-8 text-black" />
         </button>
       </div>
 
       {/* Popular Songs */}
-      <div className="px-8 mt-6">
+      <div className="px-8">
         <h2 className="text-2xl font-bold mb-4">Popular</h2>
         <div className="grid gap-4">
           {artistSongs.map((song, index) => (
@@ -80,6 +80,7 @@ const Artist = () => {
                 src={song.albumArt}
                 alt={song.title}
                 className="w-12 h-12 rounded-md mr-4"
+                onError={handleAlbumImageError}
               />
               <div className="flex-1">
                 <h3 className="font-semibold">{song.title}</h3>
@@ -102,27 +103,28 @@ const Artist = () => {
       </div>
 
       {/* Albums */}
-      <div className="px-8 mt-8">
-        <h2 className="text-2xl font-bold mb-4">Albums</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          {artistAlbums.map((album) => (
-            <div
-              key={album.id}
-              className="bg-[#181818] p-4 rounded-xl hover:bg-[#282828] transition-colors group"
-            >
-              <img
-                src={album.coverArt}
-                alt={album.title}
-                className="w-full aspect-square object-cover rounded-lg shadow-lg mb-4"
-              />
-              <h3 className="font-semibold truncate">{album.title}</h3>
-              <p className="text-sm text-gray-400 mt-1">
-                {album.releaseYear} • Album
-              </p>
-            </div>
-          ))}
+      {artistAlbums.length > 0 && (
+        <div className="px-8 mt-8">
+          <h2 className="text-2xl font-bold mb-4">Albums</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {artistAlbums.map((album) => (
+              <div
+                key={album.id}
+                className="bg-[#181818] p-4 rounded-xl hover:bg-[#282828] transition-colors"
+              >
+                <img
+                  src={album.coverArt}
+                  alt={album.title}
+                  className="w-full aspect-square object-cover rounded-lg shadow-lg mb-4"
+                  onError={handleAlbumImageError}
+                />
+                <h3 className="font-semibold truncate">{album.title}</h3>
+                <p className="text-sm text-gray-400">{album.releaseYear}</p>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

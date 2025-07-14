@@ -11,6 +11,7 @@ import Album from './pages/Album';
 import Playlist from './pages/Playlist';
 import Category from './pages/Category';
 import Artist from './pages/Artist';
+import NotFound from './pages/NotFound';
 import AddToPlaylistModal from './components/modals/AddToPlaylistModal';
 
 function App() {
@@ -32,6 +33,7 @@ function App() {
               <Route path="/playlist/:id" element={<Playlist />} />
               <Route path="/category/:id" element={<Category />} />
               <Route path="/artist/:id" element={<Artist />} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
         </div>

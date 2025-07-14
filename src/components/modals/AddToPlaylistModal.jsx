@@ -1,6 +1,7 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { addSongToPlaylist, setShowAddToPlaylistModal } from '../../redux/features/playlistSlice';
 import { BsX, BsPlus } from 'react-icons/bs';
+import { handleImageError } from '../../utils/imageUtils';
 
 const AddToPlaylistModal = () => {
   const dispatch = useDispatch();
@@ -30,6 +31,7 @@ const AddToPlaylistModal = () => {
               src={selectedSong.albumArt}
               alt={selectedSong.title}
               className="w-12 h-12 rounded-md mr-4"
+              onError={handleImageError}
             />
             <div>
               <h3 className="text-white font-semibold">{selectedSong.title}</h3>
